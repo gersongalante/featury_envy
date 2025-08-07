@@ -1,15 +1,15 @@
-# Feature Envy Detector
+# Long Parameter List Detector
 
-Um dashboard interativo para análise de code smells "Feature Envy" em projetos App Inventor (.aia).
+Um dashboard interativo para análise de code smells "Long Parameter List" em projetos App Inventor (.aia).
 
 ## Descrição
 
-Este projeto implementa um detector de Feature Envy para aplicações desenvolvidas no MIT App Inventor. O Feature Envy é um code smell que ocorre quando um método acessa mais dados de outros objetos do que de seu próprio objeto.
+Este projeto implementa um detector de Long Parameter List para aplicações desenvolvidas no MIT App Inventor. O Long Parameter List é um code smell que ocorre quando um procedimento tem muitos parâmetros, dificultando sua compreensão e manutenção.
 
 ## Funcionalidades
 
 - **Upload de arquivos .aia**: Interface para carregar projetos App Inventor
-- **Análise automática**: Detecção de Feature Envy em manipuladores de eventos
+- **Análise automática**: Detecção de procedimentos com muitos parâmetros
 - **Dashboard interativo**: Visualização de resultados com gráficos e métricas
 - **Relatórios detalhados**: Análise completa com recomendações
 
@@ -55,11 +55,14 @@ streamlit run dashboard.py
 
 ```
 featury_envy/
-├── dashboard.py              # Interface Streamlit
-├── processador_feature_envy.py  # Lógica de análise
-├── requirements.txt          # Dependências
-├── README.md               # Documentação
-└── dataset/               # Arquivos de exemplo
+├── dashboard.py                              # Interface principal
+├── processador_correcto_parametros_longos_ou_feature_envy.py  # Lógica de análise
+├── requirements.txt                          # Dependências
+├── README.md                                # Documentação geral
+├── USAGE.md                                 # Guia de uso detalhado
+├── RESUMO_IMPLEMENTACAO.md                  # Resumo da implementação
+├── .gitignore                               # Configuração Git
+└── dataset/                                 # Arquivos de exemplo
     └── *.aia
 ```
 

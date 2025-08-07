@@ -1,4 +1,4 @@
-# Guia de Uso - Feature Envy Detector
+# Guia de Uso - Long Parameter List Detector
 
 ## 🚀 Como Executar
 
@@ -28,74 +28,73 @@ streamlit run dashboard.py
 3. Clique em "🚀 Iniciar Análise"
 
 ### Configurações
-- **Limite mínimo de acessos**: Ajuste o slider para definir quantos acessos mínimos são necessários para considerar um bloco para análise
-- **Valor padrão**: 4 acessos
+- **Limite de parâmetros**: Ajuste o slider para definir quantos parâmetros são permitidos antes de ser considerado um code smell
+- **Valor padrão**: 3 parâmetros
 
 ### Resultados
 O dashboard exibe:
 
 #### Métricas Gerais
 - **Telas Analisadas**: Número total de telas no projeto
-- **Casos de Feature Envy**: Total de problemas encontrados
-- **Telas com Problemas**: Quantas telas têm issues
+- **Procedimentos Encontrados**: Total de procedimentos detectados
+- **Procedimentos com Muitos Parâmetros**: Procedimentos que excedem o limite
 - **Taxa de Problemas**: Percentual de telas com problemas
 
 #### Visualizações
-- **Gráfico de Pizza**: Distribuição de telas com/sem Feature Envy
-- **Gráfico de Barras**: Casos de Feature Envy por tela
-- **Gráficos de Acesso**: Para cada caso, mostra acessos locais vs externos
+- **Gráfico de Pizza**: Distribuição de telas com/sem problemas
+- **Gráfico de Barras**: Procedimentos problemáticos por tela
+- **Gráficos de Parâmetros**: Para cada procedimento problemático, mostra o número de parâmetros
 
 #### Detalhes por Tela
-- **Expandir cada tela** para ver casos específicos
-- **Gráficos de barras** mostrando distribuição de acessos
-- **Lista de componentes invejados** com contagem de acessos
+- **Expandir cada tela** para ver procedimentos específicos
+- **Gráficos de barras** mostrando número de parâmetros
+- **Lista de parâmetros** com nomes detalhados
 
 ## 🔍 Interpretando os Resultados
 
-### O que é Feature Envy?
-Feature Envy ocorre quando um método acessa mais dados de outros objetos do que de seu próprio objeto.
+### O que é Long Parameter List?
+Long Parameter List ocorre quando um procedimento tem muitos parâmetros, dificultando sua compreensão e manutenção.
 
 ### Sintomas Detectados:
-- ✅ **Acessos Locais**: Interações com o próprio componente
-- ❌ **Acessos Externos**: Interações com outros componentes
-- ⚠️ **Problema**: Quando acessos externos > acessos locais
+- ✅ **Procedimentos Normais**: Com 3 ou menos parâmetros
+- ⚠️ **Procedimentos Problemáticos**: Com mais de 3 parâmetros
+- 🚨 **Problema**: Quando parâmetros > limite configurado
 
 ### Exemplo de Problema:
 ```javascript
-// PROBLEMA: Este handler acessa mais outros componentes
-Button1.Click {
-    // 1 acesso local (Button1)
-    // 5 acessos externos (TextBox1, Label1, etc.)
-    TextBox1.Text = "Hello"
-    Label1.Text = "World"
-    // ... mais acessos externos
+// PROBLEMA: Este procedimento tem muitos parâmetros
+procedure CalcularTotal(
+    valor1, valor2, valor3, valor4, valor5, valor6
+) {
+    // 6 parâmetros - muito difícil de manter
+    return valor1 + valor2 + valor3 + valor4 + valor5 + valor6;
 }
 ```
 
 ## 🛠️ Soluções Recomendadas
 
-### 1. Refatoração de Métodos
-- Mover lógica para componentes apropriados
-- Criar métodos auxiliares nos componentes corretos
+### 1. Agrupar Parâmetros
+- Criar uma estrutura de dados (lista ou dicionário)
+- Passar objetos em vez de parâmetros individuais
 
-### 2. Reorganização de Responsabilidades
-- Verificar se o handler está no componente correto
-- Considerar mover funcionalidade para outros componentes
+### 2. Dividir Procedimentos
+- Quebrar em procedimentos menores
+- Cada procedimento com responsabilidade específica
 
 ### 3. Padrões de Design
 - Aplicar princípios SOLID
-- Usar padrões como Observer ou Mediator
+- Usar padrões como Builder ou Factory
 
 ## 📁 Estrutura de Arquivos
 
 ```
 featury_envy/
-├── dashboard.py              # Interface principal
-├── processador_feature_envy.py  # Lógica de análise
-├── requirements.txt          # Dependências
-├── README.md               # Documentação geral
-├── USAGE.md               # Este guia
-└── dataset/               # Arquivos de exemplo
+├── dashboard.py                              # Interface principal
+├── processador_correcto_parametros_longos_ou_feature_envy.py  # Lógica de análise
+├── requirements.txt                          # Dependências
+├── README.md                                # Documentação geral
+├── USAGE.md                                 # Este guia
+└── dataset/                                 # Arquivos de exemplo
     └── *.aia
 ```
 
