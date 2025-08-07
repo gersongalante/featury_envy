@@ -96,6 +96,45 @@ def find_feature_envy(structured_data: Dict, access_threshold: int) -> List[Dict
 
     return envy_cases
 
+def find_procedures_in_ast(ast: Dict) -> List[Dict]:
+    """
+    Analisa a AST e retorna uma lista de todos os procedimentos definidos.
+    CORRIGIDO: Extrai os parâmetros dos elementos 'field' com nome 'VAR...'.
+    """
+    all_procedures = []
+    if not ast or 'blocks' not in ast:
+        return []
+
+    procedure_definitions = [
+        b for b in ast.get('blocks', [])
+        if b and b.get('type') in ['procedures_defnoreturn', 'procedures_defreturn']
+    ]
+
+    for proc in procedure_definitions:
+        if not proc: continue
+
+        proc_name = 'ProcedimentoSemNome'
+        parameters = []
+
+        # Itera pelos campos para encontrar o nome e os parâmetros
+        for field in proc.get('fields', []):
+            field_name = field.get('name')
+            if field_name == 'NAME':
+                proc_name = field.get('text', 'ProcedimentoSemNome')
+            elif field_name and field_name.startswith('VAR'):
+                # Adiciona o texto do campo (nome do parâmetro) à lista
+                if field.get('text'):
+                    parameters.append(field.get('text'))
+
+        proc_details = {
+            "procedure_name": proc_name,
+            "parameter_count": len(parameters),
+            "parameters": parameters,
+        }
+        all_procedures.append(proc_details)
+
+    return all_procedures
+
 # Configuração da página
 st.set_page_config(
     page_title="Feature Envy Detector",
@@ -243,14 +282,20 @@ def analyze_project(uploaded_file, access_threshold):
                 
                 structured_data = parse_blockly_xml(xml_content)
                 if structured_data:
+                    # Detectar procedimentos primeiro
+                    procedures = find_procedures_in_ast(structured_data)
+                    
+                    # Detectar Feature Envy
                     envy_cases = find_feature_envy(structured_data, access_threshold)
                     
                     screen_result = {
                         'screen_name': screen_name,
                         'envy_cases': envy_cases,
+                        'procedures': procedures,
                         'total_handlers': len([b for b in structured_data.get('blocks', []) 
                                              if b.get('type') == 'component_event']),
-                        'total_blocks': len(structured_data.get('blocks', []))
+                        'total_blocks': len(structured_data.get('blocks', [])),
+                        'total_procedures': len(procedures)
                     }
                     all_results.append(screen_result)
             
@@ -276,6 +321,7 @@ def display_results(results):
     total_screens = len(results)
     total_envy_cases = sum(len(screen['envy_cases']) for screen in results)
     screens_with_envy = len([screen for screen in results if screen['envy_cases']])
+    total_procedures = sum(screen.get('total_procedures', 0) for screen in results)
     
     # Métricas
     col1, col2, col3, col4 = st.columns(4)
@@ -287,7 +333,7 @@ def display_results(results):
         st.metric("Casos de Feature Envy", total_envy_cases)
     
     with col3:
-        st.metric("Telas com Problemas", screens_with_envy)
+        st.metric("Procedimentos Encontrados", total_procedures)
     
     with col4:
         if total_screens > 0:
@@ -302,7 +348,18 @@ def display_results(results):
     for screen_result in results:
         with st.expander(f"📱 {screen_result['screen_name']}", expanded=True):
             envy_cases = screen_result['envy_cases']
+            procedures = screen_result.get('procedures', [])
             
+            # Mostrar procedimentos encontrados
+            if procedures:
+                st.info(f"📋 {len(procedures)} procedimento(s) encontrado(s) nesta tela")
+                for proc in procedures:
+                    st.markdown(f"**Procedimento:** {proc['procedure_name']} ({proc['parameter_count']} parâmetros)")
+                    if proc['parameters']:
+                        st.markdown(f"**Parâmetros:** {', '.join(proc['parameters'])}")
+                    st.markdown("---")
+            
+            # Mostrar casos de Feature Envy
             if not envy_cases:
                 st.success("✅ Nenhum caso de Feature Envy detectado nesta tela")
             else:
