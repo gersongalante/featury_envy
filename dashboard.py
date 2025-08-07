@@ -10,14 +10,91 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple
 import json
 
-# Importar funções do processador
-from processador_feature_envy import (
+# Importar funções do processador correto
+from processador_correcto_parametros_longos_ou_feature_envy import (
     extrair_arquivo_aia,
     encontrar_arquivos_bky,
-    parse_blockly_xml,
-    find_feature_envy,
-    collect_component_accesses
+    parse_blockly_xml_to_ast as parse_blockly_xml
 )
+
+# Funções de Feature Envy (adaptadas do arquivo correto)
+def collect_component_accesses(block: Optional[Dict], access_list: List[str]):
+    """
+    Percorre recursivamente a AST de um bloco e coleta todos os acessos a componentes.
+    """
+    if not block:
+        return
+
+    block_type = block.get('type')
+
+    # Verifica se o bloco é um acesso a um componente (método, getter ou setter)
+    if block_type in ['component_method', 'component_set_get']:
+        instance_name = block.get('mutation', {}).get('instance_name')
+        if instance_name:
+            access_list.append(instance_name)
+
+    # Continua a recursão para todos os blocos filhos
+    for value in block.get('values', []):
+        collect_component_accesses(value.get('block'), access_list)
+    for statement in block.get('statements', []):
+        collect_component_accesses(statement.get('block'), access_list)
+
+    collect_component_accesses(block.get('next'), access_list)
+
+def find_feature_envy(structured_data: Dict, access_threshold: int) -> List[Dict]:
+    """
+    Analisa uma tela para encontrar manipuladores de eventos que exibem "Feature Envy".
+    """
+    envy_cases = []
+
+    # Procura por blocos de manipulador de eventos
+    event_handlers = [b for b in structured_data.get('blocks', []) if b.get('type') == 'component_event']
+
+    for handler in event_handlers:
+        handler_mutation = handler.get('mutation', {})
+        host_component_name = handler_mutation.get('instance_name')
+        event_name = handler_mutation.get('event_name')
+
+        if not host_component_name:
+            continue # Pula handlers malformados
+
+        full_handler_name = f"{host_component_name}.{event_name}"
+
+        # O corpo do handler está no primeiro statement
+        body_start_block = None
+        if handler.get('statements'):
+            body_start_block = handler['statements'][0].get('block')
+
+        if not body_start_block:
+            continue # Handler sem corpo
+
+        # Coleta todos os acessos a componentes dentro do corpo do handler
+        accesses = []
+        collect_component_accesses(body_start_block, accesses)
+
+        # Calcula as métricas
+        access_counts = Counter(accesses)
+        total_accesses = len(accesses)
+
+        # Se não houver acessos suficientes, não é relevante
+        if total_accesses <= access_threshold:
+            continue
+
+        local_accesses = access_counts.get(host_component_name, 0)
+        foreign_accesses = total_accesses - local_accesses
+
+        # Aplica a heurística do Feature Envy
+        if foreign_accesses > local_accesses:
+            envy_details = {
+                "handler_name": full_handler_name,
+                "local_accesses": local_accesses,
+                "foreign_accesses": foreign_accesses,
+                "total_accesses": total_accesses,
+                "envied_components": {comp: count for comp, count in access_counts.items() if comp != host_component_name}
+            }
+            envy_cases.append(envy_details)
+
+    return envy_cases
 
 # Configuração da página
 st.set_page_config(
